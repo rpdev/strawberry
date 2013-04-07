@@ -15,34 +15,55 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
+import javax.swing.table.TableRowSorter;
 
 class Gui extends JFrame {
 	private static final long serialVersionUID = -6029743826442546600L;
 
-	Gui(TableBackend tableModel){
+	Gui(final TableBackend tableModel){
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setLayout(new BorderLayout());
+
+		final JTable table = new JTable(tableModel);
 		
 		JButton add = new JButton("Lägg Till");
 		add.addActionListener(new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				DisplayItem item = new DisplayItem();
+				new DisplayItem(tableModel);
 			}
 		});
 		
-		JButton show = new JButton("Visa");
-		JButton edit = new JButton("Ändra");
+		JButton show = new JButton("Visa/Ändra");
+		show.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				int row = table.getSelectedRow();
+				if(row != -1)
+					new DisplayItem(tableModel, row);
+			}
+		});
 		JButton remove = new JButton("Ta bort");
+		remove.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				int row = table.getSelectedRow();
+				if(row != -1)
+					tableModel.deleteItem(row);
+			}
+		});
 		JPanel buttons = new JPanel(new FlowLayout());
 		buttons.add(add);
 		buttons.add(show);
-		buttons.add(edit);
 		buttons.add(remove);
 		this.add(buttons, BorderLayout.NORTH);
 		
-		JTable table = new JTable(tableModel);
+		TableRowSorter<TableBackend> sorter = new TableRowSorter<>(tableModel);
+		table.setRowSorter(sorter);
+		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		this.add(new JScrollPane(table), BorderLayout.CENTER);
 		
 		this.pack();
@@ -60,7 +81,7 @@ class Gui extends JFrame {
 			fields.get(Labels.ID).setEditable(false);
 		}
 		
-		private DisplayItem(){
+		private DisplayItem(final TableBackend model){
 			this.setLayout(new GridLayout(0, 2));
 			this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			
@@ -71,6 +92,20 @@ class Gui extends JFrame {
 			}
 			
 			JButton save = new JButton("Spara");
+			save.addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent ae) {
+					EnumMap<Labels, String> data = new EnumMap<>(Labels.class);
+					for(Entry<Labels, JTextField> e : fields.entrySet()){
+						String text = e.getValue().getText().trim();
+						if(text.length() > 0)
+							data.put(e.getKey(), text);
+					}
+					model.saveUpdateData(data);
+					dispose();
+				}
+			});
 			JButton abort = new JButton("Avbryt");
 			abort.addActionListener(new ActionListener() {
 				
@@ -87,8 +122,12 @@ class Gui extends JFrame {
 			this.setVisible(true);
 		}
 		
-		private DisplayItem(Data data){
-			this();
+		private DisplayItem(TableBackend model, int rowIndex){
+			this(model);
+			EnumMap<Labels, String> data = model.getEnumData(rowIndex);
+			for(Entry<Labels, JTextField> e : fields.entrySet()){
+				e.getValue().setText(data.get(e.getKey()));
+			}
 		}
 	}
 }

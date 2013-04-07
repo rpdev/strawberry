@@ -8,13 +8,37 @@ import javax.swing.table.DefaultTableModel;
 class TableBackend extends DefaultTableModel {
 	private static final long serialVersionUID = -758366155994706040L;
 	private final ArrayList<EnumMap<Labels, String>> data;
+	private final FroApp froApp;
 
-	TableBackend(ArrayList<EnumMap<Labels, String>> data) {
-		// TODO Auto-generated constructor stub
+	TableBackend(FroApp froApp, ArrayList<EnumMap<Labels, String>> data) {
+		this.froApp = froApp;
 		this.data = data;
-		System.out.println(data.size());
 	}
 
+	EnumMap<Labels, String> getEnumData(int rowIndex){
+		return data.get(rowIndex).clone();
+	}
+	
+	void setData(ArrayList<EnumMap<Labels, String>> data){
+		this.data.clear();
+		this.data.addAll(data);
+		fireTableDataChanged();
+	}	
+	
+	void saveUpdateData(EnumMap<Labels, String> data) {
+		if(data.containsKey(Labels.ID)){
+			System.out.println("ID");
+		} else {			
+			System.out.println("NO ID");
+			froApp.saveData(data);
+		}
+		// TODO Auto-generated method stub
+	}
+	
+	void deleteItem(int row) {
+		froApp.deleteItem(Integer.parseInt(data.get(row).get(Labels.ID)));
+	}
+	
 	@Override
 	public Class<?> getColumnClass(int columnIndex) {
 		return Labels.values()[columnIndex].cl;
@@ -53,5 +77,4 @@ class TableBackend extends DefaultTableModel {
 		// TODO Auto-generated method stub
 
 	}
-
 }

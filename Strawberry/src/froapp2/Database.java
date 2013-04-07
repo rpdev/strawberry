@@ -12,7 +12,7 @@ import java.util.EnumMap;
 class Database {
 	private static Database instance;
 	private final Connection connection;
-	private final PreparedStatement insertStatment, getAllStatement;
+	private final PreparedStatement insertStatment, getAllStatement, deleteStatement;
 
 	private Database() throws ClassNotFoundException, SQLException {
 		Class.forName("org.sqlite.JDBC");
@@ -27,6 +27,7 @@ class Database {
 			sb.append(l.toString().toLowerCase() + " " + l.databaseType + ",");
 		sb.deleteCharAt(sb.lastIndexOf(","));
 		sb.append(")");
+		System.out.println(sb.toString());
 		statement.executeUpdate(sb.toString());
 		
 		
@@ -41,9 +42,11 @@ class Database {
 		}
 		insertString.deleteCharAt(insertString.lastIndexOf(","));
 		insertString.append(")");		
+		System.out.println(insertString.toString());
 		insertStatment = connection.prepareStatement(insertString.toString());
 		
 		getAllStatement = connection.prepareStatement("SELECT * FROM berries");
+		deleteStatement = connection.prepareStatement("DELETE FROM berries WHERE "+Labels.ID.toString().toLowerCase() + " = ?");
 	}
 
 	static Database getInstance() {
@@ -82,6 +85,15 @@ class Database {
 			insertStatment.setInt(Labels.NON_SOLD.ordinal(), nonSold);
 			insertStatment.setInt(Labels.PRICE.ordinal(), price);
 			insertStatment.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	void deleteItem(int id){
+		try {
+			deleteStatement.setInt(Labels.ID.ordinal()+1, id);
+			deleteStatement.executeUpdate();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
