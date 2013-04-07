@@ -1,12 +1,18 @@
 package froapp2;
 
+import java.util.ArrayList;
+import java.util.EnumMap;
+
 import javax.swing.table.DefaultTableModel;
 
 class TableBackend extends DefaultTableModel {
 	private static final long serialVersionUID = -758366155994706040L;
+	private final ArrayList<EnumMap<Labels, String>> data;
 
-	public TableBackend() {
+	TableBackend(ArrayList<EnumMap<Labels, String>> data) {
 		// TODO Auto-generated constructor stub
+		this.data = data;
+		System.out.println(data.size());
 	}
 
 	@Override
@@ -26,14 +32,15 @@ class TableBackend extends DefaultTableModel {
 
 	@Override
 	public int getRowCount() {
-		// TODO Auto-generated method stub
-		return 0;
+		if(data == null)
+			return 0;
+		else
+			return data.size();
 	}
 
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
-		// TODO Auto-generated method stub
-		return null;
+		return data.get(rowIndex).get(Labels.values()[columnIndex]);
 	}
 
 	@Override

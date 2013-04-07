@@ -2,33 +2,26 @@
 package froapp2;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.Map.Entry;
+
 
 public class FroApp {
-	private final ArrayList<Data> berrys = new ArrayList<>();
 	
 	private FroApp() {
 		
-		new Gui(new TableBackend());
 		
-		Data blue = new Data("Blåbär", 10, 23);
-		blue.setSalda(2);
-		berrys.add(blue);
-		
-		Data bear = new Data("Björnbär", 8, 54);
-		bear.setSalda(1);
-		berrys.add(bear);
-		
-		printListContent();
-	}
-  
-	private void printListContent(){
-//		for(Data d : berrys)
-//			System.out.println(d);
-		
-		for(int i=0; i< berrys.size(); i++){
-			Data d = berrys.get(i);
-			System.out.println(d.toString());
+		Database.getInstance().addItem("Blåbär", 10, 2, 10-2, 23);
+		Database.getInstance().addItem("Björnbär", 8, 1, 8-1, 54);
+		ArrayList<EnumMap<Labels, String>> d = Database.getInstance().getAllContent();
+		for(EnumMap<Labels, String> v : d){
+			for(Entry<Labels, String> e : v.entrySet()){
+				System.out.print(e + " ");
+			}
+			System.out.println();
 		}
+		TableBackend b = new TableBackend(d);
+		new Gui(b);
 	}
 	
     public static void main(String[] args) {
