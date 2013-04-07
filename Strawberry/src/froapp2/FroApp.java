@@ -7,7 +7,8 @@ public class FroApp {
 	private final ArrayList<Data> berrys = new ArrayList<>();
 	
 	private FroApp() {
-		new Gui();
+		
+		new Gui(new TableBackend());
 		
 		Data blue = new Data("Blåbär", 10, 23);
 		blue.setSalda(2);

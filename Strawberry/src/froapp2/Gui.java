@@ -5,17 +5,21 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.EnumMap;
+import java.util.Map.Entry;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.JTextField;
 
 class Gui extends JFrame {
 	private static final long serialVersionUID = -6029743826442546600L;
 
-	Gui(){
+	Gui(TableBackend tableModel){
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setLayout(new BorderLayout());
 		
@@ -38,30 +42,32 @@ class Gui extends JFrame {
 		buttons.add(remove);
 		this.add(buttons, BorderLayout.NORTH);
 		
+		JTable table = new JTable(tableModel);
+		this.add(new JScrollPane(table), BorderLayout.CENTER);
+		
 		this.pack();
 		this.setVisible(true);
 	}
 	
 	
-	private class DisplayItem extends JFrame{
+	private static class DisplayItem extends JFrame{
 		private static final long serialVersionUID = -8466864965303634622L;
-		private final String[] labels = {"ID","Namn","Antal","Sålda","Ej Sålda","Pris","Lägsta","Högsta","Medel"};
-		private final JTextField[] fields = new JTextField[labels.length];
+		private final EnumMap<Labels, JTextField> fields = new EnumMap<>(Labels.class);
 		{
-//			Arrays.fill(fields, new JTextField());
-			for(int i=0;i<fields.length;i++)
-				fields[i] = new JTextField();
-			fields[0].setEditable(false); // ID
+			for(Labels key : Labels.values())
+				fields.put(key, new JTextField());
+			
+			fields.get(Labels.ID).setEditable(false);
 		}
 		
 		private DisplayItem(){
 			this.setLayout(new GridLayout(0, 2));
 			this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			
-			for(int i=0;i<labels.length;i++){
-				JLabel l = new JLabel(labels[i]);
-				this.add(l);
-				this.add(fields[i]);
+			for(Entry<Labels, JTextField> e : fields.entrySet()){
+				JLabel label = new JLabel(e.getKey().label);
+				this.add(label);
+				this.add(e.getValue());
 			}
 			
 			JButton save = new JButton("Spara");
