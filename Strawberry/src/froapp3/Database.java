@@ -19,6 +19,8 @@ class Database {
 	
 	private interface DatabaseKeys{
 		String getDatabaseType();
+
+		String getDatabaseKey();
 	}
 	
 	public static void main(String[] args) throws ClassNotFoundException, SQLException{
@@ -54,12 +56,12 @@ class Database {
 	}
 	
 	private enum Berries implements DatabaseKeys{
-		ID("id INTEGER PRIMARY KEY"),
-		NAME("name TEXT"),
-		NUMBER("number INTEGER"),
-		SOLD("sold INTEGER"),
-		NON_SOLD("non_sold INTEGER"),
-		PRICE("price INTEGER");
+		ID("INTEGER PRIMARY KEY"),
+		NAME("TEXT"),
+		NUMBER("INTEGER"),
+		SOLD("INTEGER"),
+		NON_SOLD("INTEGER"),
+		PRICE("INTEGER");
 		
 		private final String databaseType;
 		
@@ -69,14 +71,19 @@ class Database {
 
 		@Override
 		public String getDatabaseType() {
-			return databaseType;
+			return getDatabaseKey() + " " + databaseType;
+		}
+		
+		@Override
+		public String getDatabaseKey(){
+			return toString().toLowerCase();
 		}
 	}
 	
 	private enum Prices implements DatabaseKeys{
-		ID("id INTEGER PRIMARY KEY"),
-		PRICE("price INTEGER"),
-		BERRY_ID("berry_id INTEGER, FOREIGN KEY(berry_id) REFERENCES Berries(id) ON DELETE CASCADE");
+		ID("INTEGER PRIMARY KEY"),
+		PRICE("INTEGER"),
+		BERRY_ID("INTEGER, FOREIGN KEY(berry_id) REFERENCES Berries(id) ON DELETE CASCADE");
 		
 		private final String databaseType;
 		
@@ -86,7 +93,12 @@ class Database {
 
 		@Override
 		public String getDatabaseType() {
-			return databaseType;
+			return getDatabaseKey() + " " + databaseType;
+		}
+		
+		@Override
+		public String getDatabaseKey(){
+			return toString().toLowerCase();
 		}
 	}
 
@@ -107,8 +119,8 @@ class Database {
 		getAllBerries = connection.prepareStatement("SELECT * FROM "+Berries.class.getSimpleName());
 		getAllPrices = connection.prepareStatement("SELECT * FROM "+Prices.class.getSimpleName());
 		
-		deleteBerries = connection.prepareStatement("DELETE FROM "+Berries.class.getSimpleName()+" WHERE "+Berries.ID.toString().toLowerCase()+" = ?");
-		deletePrices = connection.prepareStatement("DELETE FROM "+Prices.class.getSimpleName()+" WHERE "+Prices.ID.toString().toLowerCase()+" = ?");
+		deleteBerries = connection.prepareStatement("DELETE FROM "+Berries.class.getSimpleName()+" WHERE "+Berries.ID.getDatabaseKey()+" = ?");
+		deletePrices = connection.prepareStatement("DELETE FROM "+Prices.class.getSimpleName()+" WHERE "+Prices.ID.getDatabaseKey()+" = ?");
 	}
 	
 	private String generateTable(Class<? extends Enum<? extends DatabaseKeys>> enums){
@@ -128,8 +140,10 @@ class Database {
 		Arrays.sort(ignore);
 		StringBuilder sb = new StringBuilder("INSERT INTO " + enums.getSimpleName() + "(");
 		for (Object l : enums.getEnumConstants()){
-			if(Arrays.binarySearch(ignore, l) < 0)
-				sb.append(l.toString().toLowerCase() + ",");
+			if(Arrays.binarySearch(ignore, l) < 0){
+				DatabaseKeys e =  (DatabaseKeys) l;
+				sb.append(e.getDatabaseKey() + ",");
+			}
 		}
 		sb.deleteCharAt(sb.lastIndexOf(","));
 		sb.append(") VALUES(");
@@ -216,27 +230,27 @@ class Database {
 			StringBuilder sb = new StringBuilder("UPDATE "+Berries.class.getSimpleName()+" SET ");
 			ArrayList<Object> data = new ArrayList<>();
 			if (name != null) {
-				sb.append(Berries.NAME.toString().toLowerCase()+ " = ?,");
+				sb.append(Berries.NAME.getDatabaseKey()+ " = ?,");
 				data.add(name);
 			}
 			if (number != null) {
-				sb.append(Berries.NUMBER.toString().toLowerCase()+ " = ?,");
+				sb.append(Berries.NUMBER.getDatabaseKey()+ " = ?,");
 				data.add(number);
 			}
 			if (sold != null) {
-				sb.append(Berries.SOLD.toString().toLowerCase()+ " = ?,");
+				sb.append(Berries.SOLD.getDatabaseKey()+ " = ?,");
 				data.add(sold);
 			}
 			if (nonSold != null) {
-				sb.append(Berries.NON_SOLD.toString().toLowerCase()+ " = ?,");
+				sb.append(Berries.NON_SOLD.getDatabaseKey()+ " = ?,");
 				data.add(nonSold);
 			}
 			if (price != null) {
-				sb.append(Berries.PRICE.toString().toLowerCase()+ " = ?,");
+				sb.append(Berries.PRICE.getDatabaseKey()+ " = ?,");
 				data.add(price);
 			}
 			sb.deleteCharAt(sb.lastIndexOf(","));
-			sb.append(" WHERE "+Berries.ID.toString().toLowerCase()+" = ?");
+			sb.append(" WHERE "+Berries.ID.getDatabaseKey()+" = ?");
 			System.out.println(sb.toString());
 			PreparedStatement st = connection.prepareStatement(sb.toString());
 			for(int i=0;i<data.size();i++){
@@ -260,15 +274,15 @@ class Database {
 			StringBuilder sb = new StringBuilder("UPDATE "+Prices.class.getSimpleName()+" SET ");
 			ArrayList<Object> data = new ArrayList<>();
 			if (price != null) {
-				sb.append(Prices.PRICE.toString().toLowerCase()+ " = ?,");
+				sb.append(Prices.PRICE.getDatabaseKey()+ " = ?,");
 				data.add(price);
 			}
 			if (berryId != null) {
-				sb.append(Prices.BERRY_ID.toString().toLowerCase()+ " = ?,");
+				sb.append(Prices.BERRY_ID.getDatabaseKey()+ " = ?,");
 				data.add(berryId);
 			}
 			sb.deleteCharAt(sb.lastIndexOf(","));
-			sb.append(" WHERE "+Berries.ID.toString().toLowerCase()+" = ?");
+			sb.append(" WHERE "+Prices.ID.getDatabaseKey()+" = ?");
 			System.out.println(sb.toString());
 			PreparedStatement st = connection.prepareStatement(sb.toString());
 			for(int i=0;i<data.size();i++){
