@@ -11,6 +11,10 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 
+/**
+ * A Simple example how JTable works together with TableModel, to help
+ * the friend get an understanding of this.
+ */
 public class JTableExample extends JFrame{
 	private static final long serialVersionUID = 2706584734976094158L;
 
