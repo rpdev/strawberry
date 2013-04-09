@@ -25,21 +25,32 @@ class Database {
 		Database d = Database.getInstance();
 		d.addBerry("test", 0, 0, 0, 0);
 		d.updateBerry(1, null, null, 2, 1, 3);
-		for(HashMap<String, String> a : d.getAllBerries()){
-			for(Entry<String, String> e : a.entrySet())
-				System.out.print(e + " ");
-			System.out.println();
-		}
 		d.addPrice(100, 1);
-		d.addPrice(500, 1);
-		d.addPrice(400, 1);
-		d.addPrice(10, 1);
+		d.addPrice(100, 1);
+		d.addPrice(100, 1);
+		d.addPrice(100, 1);
+		d.addPrice(100, 1);
+		d.addPrice(100, 1);
 		d.updatePrice(1, 333, null);
-		for(HashMap<String, String> a : d.getAllPrices()){
+		d.deleteBerryItem(1);
+		d.printTable(Berries.class);
+		d.printTable(Prices.class);
+	}
+	
+	private void printTable(Class<? extends Enum<?>> table){
+		ArrayList<LinkedHashMap<String, String>> list = null;
+		if(table == Berries.class){
+			list = getAllBerries();
+			System.out.println("BERRIES");
+		} else if(table == Prices.class){
+			list = getAllPrices();
+			System.out.println("PRICES");
+		}
+		for(HashMap<String, String> a : list){
 			for(Entry<String, String> e : a.entrySet())
 				System.out.print(e + " ");
 			System.out.println();
-		}
+		}		
 	}
 	
 	private enum Berries implements DatabaseKeys{
@@ -97,7 +108,7 @@ class Database {
 		getAllPrices = connection.prepareStatement("SELECT * FROM "+Prices.class.getSimpleName());
 		
 		deleteBerries = connection.prepareStatement("DELETE FROM "+Berries.class.getSimpleName()+" WHERE "+Berries.ID.toString().toLowerCase()+" = ?");
-		deleteBerries = connection.prepareStatement("DELETE FROM "+Prices.class.getSimpleName()+" WHERE "+Prices.ID.toString().toLowerCase()+" = ?");
+		deletePrices = connection.prepareStatement("DELETE FROM "+Prices.class.getSimpleName()+" WHERE "+Prices.ID.toString().toLowerCase()+" = ?");
 	}
 	
 	private String generateTable(Class<? extends Enum<? extends DatabaseKeys>> enums){
