@@ -162,7 +162,7 @@ class Database {
 	private String generateInsert(Class<? extends Enum<?>> enums, Enum<?>... ignore){
 		Arrays.sort(ignore);
 		StringBuilder sb = new StringBuilder("INSERT INTO " + enums.getSimpleName() + "(");
-		for (Object l : enums.getEnumConstants()){
+		for (Enum<?> l : enums.getEnumConstants()){
 			if(Arrays.binarySearch(ignore, l) < 0){
 				DatabaseKeys e =  (DatabaseKeys) l;
 				sb.append(e.getDatabaseKey() + ",");
@@ -170,7 +170,7 @@ class Database {
 		}
 		sb.deleteCharAt(sb.lastIndexOf(","));
 		sb.append(") VALUES(");
-		for (Object l : enums.getEnumConstants())
+		for (Enum<?> l : enums.getEnumConstants())
 			if(Arrays.binarySearch(ignore, l) < 0)
 				sb.append("?,");
 		sb.deleteCharAt(sb.lastIndexOf(","));
@@ -182,7 +182,7 @@ class Database {
 	
 	private String generateTable(Class<? extends Enum<? extends DatabaseKeys>> enums){
 		StringBuilder sb = new StringBuilder("CREATE TABLE " + enums.getSimpleName() + "(");
-		for (Object l : enums.getEnumConstants()){
+		for (Enum<?> l : enums.getEnumConstants()){
 			DatabaseKeys e =  (DatabaseKeys) l;
 			sb.append(e.getDatabaseType() + ",");
 		}
