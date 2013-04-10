@@ -80,7 +80,9 @@ class Database {
 	public static void main(String[] args) throws ClassNotFoundException, SQLException{
 		Database d = Database.getInstance();
 		d.addBerry("test", 0, 0, 0, 0);
+		d.addBerry("test2", 0, 0, 0, 0);
 		d.updateBerry(1, null, null, 2, 1, 3);
+		d.updateBerry(2, null, null, 2, 1, 3);
 		d.addPrice(100, 1);
 		d.addPrice(100, 1);
 		d.addPrice(100, 1);
