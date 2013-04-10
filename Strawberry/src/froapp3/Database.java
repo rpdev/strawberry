@@ -14,17 +14,20 @@ import java.util.Map.Entry;
 
 class Database {
 	private enum Berries implements DatabaseKeys{
-		ID("INTEGER PRIMARY KEY"),
-		NAME("TEXT"),
-		NUMBER("INTEGER"),
-		SOLD("INTEGER"),
-		NON_SOLD("INTEGER"),
-		PRICE("INTEGER");
+		ID("INTEGER PRIMARY KEY", Integer.class),
+		NAME("TEXT", String.class),
+		NUMBER("INTEGER", Integer.class),
+		SOLD("INTEGER", Integer.class),
+		NON_SOLD("INTEGER", Integer.class),
+		PRICE("INTEGER", Integer.class);
 		
 		private final String databaseType;
+		private final Class<?> javaClass;
+		private static HashMap<String, Class<?>> map;
 		
-		private Berries(String databaseType){
+		private Berries(String databaseType, Class<?> javaClass){
 			this.databaseType = databaseType;
+			this.javaClass = javaClass;
 		}
 
 		@Override
@@ -35,22 +38,44 @@ class Database {
 		@Override
 		public String getDatabaseType() {
 			return getDatabaseKey() + " " + databaseType;
+		}
+		
+		private synchronized static HashMap<String, Class<?>> getJavaClassMapping(){
+			if(map == null){
+				map = new HashMap<String, Class<?>>();
+				for(Berries e : values())
+					map.put(e.getDatabaseKey(), e.javaClass);
+			}
+			return map;
 		}
 	}
 	private interface DatabaseKeys{
+		/**
+		 * Returns the name of this enum value in the database,
+		 * for which values are stored.
+		 * @return Name of the key in the database.
+		 */
 		String getDatabaseKey();
 
+		/**
+		 * Returners the database type of this enum value, it can also
+		 * contain constraints and similar information.
+		 * @return Database type.
+		 */
 		String getDatabaseType();
 	}
 	private enum Prices implements DatabaseKeys{
-		ID("INTEGER PRIMARY KEY"),
-		PRICE("INTEGER"),
-		BERRY_ID("INTEGER, FOREIGN KEY(berry_id) REFERENCES Berries(id) ON DELETE CASCADE");
+		ID("INTEGER PRIMARY KEY", Integer.class),
+		PRICE("INTEGER", Integer.class),
+		BERRY_ID("INTEGER, FOREIGN KEY(berry_id) REFERENCES Berries(id) ON DELETE CASCADE", Integer.class);
 		
 		private final String databaseType;
+		private final Class<?> javaClass;
+		private static HashMap<String, Class<?>> map;
 		
-		private Prices(String databaseType){
+		private Prices(String databaseType, Class<?> javaClass){
 			this.databaseType = databaseType;
+			this.javaClass = javaClass;
 		}
 
 		@Override
@@ -61,6 +86,15 @@ class Database {
 		@Override
 		public String getDatabaseType() {
 			return getDatabaseKey() + " " + databaseType;
+		}
+		
+		private synchronized static HashMap<String, Class<?>> getJavaClassMapping(){
+			if(map == null){
+				map = new HashMap<String, Class<?>>();
+				for(Prices e : values())
+					map.put(e.getDatabaseKey(), e.javaClass);
+			}
+			return map;
 		}
 	}
 	
@@ -77,27 +111,9 @@ class Database {
 		return instance;
 	}
 	
-	public static void main(String[] args) throws ClassNotFoundException, SQLException{
-		Database d = Database.getInstance();
-		d.addBerry("test", 0, 0, 0, 0);
-		d.addBerry("test2", 0, 0, 0, 0);
-		d.updateBerry(1, null, null, 2, 1, 3);
-		d.updateBerry(2, null, null, 2, 1, 3);
-		d.addPrice(100, 1);
-		d.addPrice(100, 1);
-		d.addPrice(100, 1);
-		d.addPrice(100, 1);
-		d.addPrice(100, 1);
-		d.addPrice(100, 2);
-		d.updatePrice(1, 333, null);
-		d.deleteBerryItem(1);
-		d.printTable(Berries.class);
-		d.printTable(Prices.class);
-	}
-	
 	private final Connection connection;
 	
-	private PreparedStatement insertBerries, insertPrices, getAllBerries, getAllPrices, deleteBerries, deletePrices;
+	private final PreparedStatement insertBerries, insertPrices, getAllBerries, getAllPrices, deleteBerries, deletePrices, minPrice, maxPrice;
 
 	private Database() throws ClassNotFoundException, SQLException {
 		Class.forName("org.sqlite.JDBC");
@@ -118,49 +134,56 @@ class Database {
 		
 		deleteBerries = connection.prepareStatement("DELETE FROM "+Berries.class.getSimpleName()+" WHERE "+Berries.ID.getDatabaseKey()+" = ?");
 		deletePrices = connection.prepareStatement("DELETE FROM "+Prices.class.getSimpleName()+" WHERE "+Prices.ID.getDatabaseKey()+" = ?");
+		
+		minPrice = connection.prepareStatement("SELECT MIN("+Prices.PRICE.getDatabaseKey()+") FROM "+Prices.class.getSimpleName()+" WHERE "+Prices.BERRY_ID.getDatabaseKey()+" = ?");
+		maxPrice = connection.prepareStatement("SELECT MAX("+Prices.PRICE.getDatabaseKey()+") FROM "+Prices.class.getSimpleName()+" WHERE "+Prices.BERRY_ID.getDatabaseKey()+" = ?");
 	}
 	
-	void addBerry(String name, int number, int sold, int nonSold, int price) {
+	boolean addBerry(String name, int number, int sold, int nonSold, int price) {
 		try {
 			insertBerries.setString(Berries.NAME.ordinal(), name);
 			insertBerries.setInt(Berries.NUMBER.ordinal(), number);
 			insertBerries.setInt(Berries.SOLD.ordinal(), sold);
 			insertBerries.setInt(Berries.NON_SOLD.ordinal(), nonSold);
 			insertBerries.setInt(Berries.PRICE.ordinal(), price);
-			insertBerries.executeUpdate();
+			return insertBerries.executeUpdate() == 1;
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		return false;
 	}
 	
-	void addPrice(int price, int berry_id) {
+	boolean addPrice(int price, int berry_id) {
 		try {
 			insertPrices.setInt(Prices.PRICE.ordinal(), price);
 			insertPrices.setInt(Prices.BERRY_ID.ordinal(), berry_id);
-			insertPrices.executeUpdate();
+			return insertPrices.executeUpdate() == 1;
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-	}
-
-	void deleteBerryItem(int id) {
-		try {
-			deleteBerries.setInt(Berries.ID.ordinal() + 1, id); // enum index from 0, setInt index from 1
-			deleteBerries.executeUpdate();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-
-	void deletePriceItem(int id) {
-		try {
-			deletePrices.setInt(Prices.ID.ordinal() + 1, id); // enum index from 0, setInt index from 1
-			deletePrices.executeUpdate();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+		return false;
 	}
 	
+	boolean deleteBerryItem(int id) {
+		try {
+			deleteBerries.setInt(Berries.ID.ordinal() + 1, id); // enum index from 0, setInt index from 1
+			return deleteBerries.executeUpdate() == 1;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+	
+	boolean deletePriceItem(int id) {
+		try {
+			deletePrices.setInt(Prices.ID.ordinal() + 1, id); // enum index from 0, setInt index from 1
+			return deletePrices.executeUpdate() == 1;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+
 	private String generateInsert(Class<? extends Enum<?>> enums, Enum<?>... ignore){
 		Arrays.sort(ignore);
 		StringBuilder sb = new StringBuilder("INSERT INTO " + enums.getSimpleName() + "(");
@@ -181,7 +204,7 @@ class Database {
 		System.out.println(returnValue);
 		return returnValue;
 	}
-	
+
 	private String generateTable(Class<? extends Enum<? extends DatabaseKeys>> enums){
 		StringBuilder sb = new StringBuilder("CREATE TABLE " + enums.getSimpleName() + "(");
 		for (Enum<?> l : enums.getEnumConstants()){
@@ -195,33 +218,18 @@ class Database {
 		return returnValue;
 	}
 	
-	ArrayList<LinkedHashMap<String, String>> getAllBerries() {
+	ArrayList<LinkedHashMap<String, Object>> getAllBerries() {
 		try {
 			ResultSet set = getAllBerries.executeQuery();
-			ArrayList<LinkedHashMap<String, String>> data = new ArrayList<>();
+			ArrayList<LinkedHashMap<String, Object>> data = new ArrayList<>();
 			while (set.next()) {
-				LinkedHashMap<String, String> rowData = new LinkedHashMap<>();
-				for (Berries l : Berries.values())
-					rowData.put(l.toString(), set.getString(l.ordinal() + 1));
+				LinkedHashMap<String, Object> rowData = new LinkedHashMap<>();
+				for (Berries l : Berries.values()){
+					rowData.put(l.toString(), set.getObject(l.ordinal() + 1));
+				}
 				data.add(rowData);
 			}
-			return data;
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
-
-	ArrayList<LinkedHashMap<String, String>> getAllPrices() {
-		try {
-			ResultSet set = getAllPrices.executeQuery();
-			ArrayList<LinkedHashMap<String, String>> data = new ArrayList<>();
-			while (set.next()) {
-				LinkedHashMap<String, String> rowData = new LinkedHashMap<>();
-				for (Prices l : Prices.values())
-					rowData.put(l.toString(), set.getString(l.ordinal() + 1));
-				data.add(rowData);
-			}
+			set.close();
 			return data;
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -229,8 +237,62 @@ class Database {
 		return null;
 	}
 	
+	ArrayList<LinkedHashMap<String, Object>> getAllPrices() {
+		try {
+			ResultSet set = getAllPrices.executeQuery();
+			ArrayList<LinkedHashMap<String, Object>> data = new ArrayList<>();
+			while (set.next()) {
+				LinkedHashMap<String, Object> rowData = new LinkedHashMap<>();
+				for (Prices l : Prices.values())
+					rowData.put(l.toString(), set.getObject(l.ordinal() + 1));
+				data.add(rowData);
+			}
+			set.close();
+			return data;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	Integer getMaxPrice(int id){
+		try {
+			maxPrice.setInt(1, id);
+			ResultSet result = maxPrice.executeQuery();
+			if(result.next()){
+				int v = result.getInt(1);
+				return !result.wasNull() ? v : null;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	/**
+	 * Return the minimum value of all prices for a specific berry id,
+	 * note that the berry id have to be present in the Berries table.
+	 * If the value don't exist, the list is empty or if an error occur
+	 * is the return value null;
+	 * @param id Id of a berry in the berries database table.
+	 * @return Minimum value or null if value don't exist or if error occur.
+	 */
+	Integer getMinPrice(int id){
+		try {
+			minPrice.setInt(1, id);
+			ResultSet result = minPrice.executeQuery();
+			if(result.next()){
+				int v = result.getInt(1);
+				return !result.wasNull() ? v : null;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
 	private void printTable(Class<? extends Enum<?>> table){
-		ArrayList<LinkedHashMap<String, String>> list = null;
+		ArrayList<LinkedHashMap<String, Object>> list = null;
 		if(table == Berries.class){
 			list = getAllBerries();
 			System.out.println("BERRIES");
@@ -238,14 +300,14 @@ class Database {
 			list = getAllPrices();
 			System.out.println("PRICES");
 		}
-		for(HashMap<String, String> a : list){
-			for(Entry<String, String> e : a.entrySet())
+		for(HashMap<String, Object> a : list){
+			for(Entry<String, Object> e : a.entrySet())
 				System.out.print(e + " ");
 			System.out.println();
 		}		
 	}
 
-	void updateBerry(int id, String name, Integer number, Integer sold, Integer nonSold, Integer price) {
+	boolean updateBerry(int id, String name, Integer number, Integer sold, Integer nonSold, Integer price) {
 		try {
 			StringBuilder sb = new StringBuilder("UPDATE "+Berries.class.getSimpleName()+" SET ");
 			ArrayList<Object> data = new ArrayList<>();
@@ -283,13 +345,14 @@ class Database {
 					System.err.println("Unkown type "+d.getClass());
 			}
 			st.setInt(data.size()+1, id);
-			st.executeUpdate();
+			return st.executeUpdate() == 1;
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		return false;
 	}
 	
-	void updatePrice(int id, Integer price, Integer berryId) {
+	boolean updatePrice(int id, Integer price, Integer berryId) {
 		try {
 			StringBuilder sb = new StringBuilder("UPDATE "+Prices.class.getSimpleName()+" SET ");
 			ArrayList<Object> data = new ArrayList<>();
@@ -315,9 +378,10 @@ class Database {
 					System.err.println("Unkown type "+d.getClass());
 			}
 			st.setInt(data.size()+1, id);
-			st.executeUpdate();
+			return st.executeUpdate() == 1;
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		return false;
 	}
 }
