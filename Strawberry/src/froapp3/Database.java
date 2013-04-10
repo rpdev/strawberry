@@ -13,48 +13,6 @@ import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 class Database {
-	private static Database instance;
-	private final Connection connection;
-	private PreparedStatement insertBerries, insertPrices, getAllBerries, getAllPrices, deleteBerries, deletePrices;
-	
-	private interface DatabaseKeys{
-		String getDatabaseType();
-
-		String getDatabaseKey();
-	}
-	
-	public static void main(String[] args) throws ClassNotFoundException, SQLException{
-		Database d = Database.getInstance();
-		d.addBerry("test", 0, 0, 0, 0);
-		d.updateBerry(1, null, null, 2, 1, 3);
-		d.addPrice(100, 1);
-		d.addPrice(100, 1);
-		d.addPrice(100, 1);
-		d.addPrice(100, 1);
-		d.addPrice(100, 1);
-		d.addPrice(100, 1);
-		d.updatePrice(1, 333, null);
-		d.deleteBerryItem(1);
-		d.printTable(Berries.class);
-		d.printTable(Prices.class);
-	}
-	
-	private void printTable(Class<? extends Enum<?>> table){
-		ArrayList<LinkedHashMap<String, String>> list = null;
-		if(table == Berries.class){
-			list = getAllBerries();
-			System.out.println("BERRIES");
-		} else if(table == Prices.class){
-			list = getAllPrices();
-			System.out.println("PRICES");
-		}
-		for(HashMap<String, String> a : list){
-			for(Entry<String, String> e : a.entrySet())
-				System.out.print(e + " ");
-			System.out.println();
-		}		
-	}
-	
 	private enum Berries implements DatabaseKeys{
 		ID("INTEGER PRIMARY KEY"),
 		NAME("TEXT"),
@@ -70,16 +28,20 @@ class Database {
 		}
 
 		@Override
-		public String getDatabaseType() {
-			return getDatabaseKey() + " " + databaseType;
-		}
-		
-		@Override
 		public String getDatabaseKey(){
 			return toString().toLowerCase();
 		}
+		
+		@Override
+		public String getDatabaseType() {
+			return getDatabaseKey() + " " + databaseType;
+		}
 	}
-	
+	private interface DatabaseKeys{
+		String getDatabaseKey();
+
+		String getDatabaseType();
+	}
 	private enum Prices implements DatabaseKeys{
 		ID("INTEGER PRIMARY KEY"),
 		PRICE("INTEGER"),
@@ -92,15 +54,48 @@ class Database {
 		}
 
 		@Override
-		public String getDatabaseType() {
-			return getDatabaseKey() + " " + databaseType;
-		}
-		
-		@Override
 		public String getDatabaseKey(){
 			return toString().toLowerCase();
 		}
+		
+		@Override
+		public String getDatabaseType() {
+			return getDatabaseKey() + " " + databaseType;
+		}
 	}
+	
+	private static Database instance;
+	
+	static Database getInstance() {
+		if (instance == null) {
+			try {
+				instance = new Database();
+			} catch (ClassNotFoundException | SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		return instance;
+	}
+	
+	public static void main(String[] args) throws ClassNotFoundException, SQLException{
+		Database d = Database.getInstance();
+		d.addBerry("test", 0, 0, 0, 0);
+		d.updateBerry(1, null, null, 2, 1, 3);
+		d.addPrice(100, 1);
+		d.addPrice(100, 1);
+		d.addPrice(100, 1);
+		d.addPrice(100, 1);
+		d.addPrice(100, 1);
+		d.addPrice(100, 2);
+		d.updatePrice(1, 333, null);
+		d.deleteBerryItem(1);
+		d.printTable(Berries.class);
+		d.printTable(Prices.class);
+	}
+	
+	private final Connection connection;
+	
+	private PreparedStatement insertBerries, insertPrices, getAllBerries, getAllPrices, deleteBerries, deletePrices;
 
 	private Database() throws ClassNotFoundException, SQLException {
 		Class.forName("org.sqlite.JDBC");
@@ -123,51 +118,6 @@ class Database {
 		deletePrices = connection.prepareStatement("DELETE FROM "+Prices.class.getSimpleName()+" WHERE "+Prices.ID.getDatabaseKey()+" = ?");
 	}
 	
-	private String generateTable(Class<? extends Enum<? extends DatabaseKeys>> enums){
-		StringBuilder sb = new StringBuilder("CREATE TABLE " + enums.getSimpleName() + "(");
-		for (Object l : enums.getEnumConstants()){
-			DatabaseKeys e =  (DatabaseKeys) l;
-			sb.append(e.getDatabaseType() + ",");
-		}
-		sb.deleteCharAt(sb.lastIndexOf(","));
-		sb.append(")");
-		String returnValue = sb.toString();
-		System.out.println(returnValue);
-		return returnValue;
-	}
-	
-	private String generateInsert(Class<? extends Enum<?>> enums, Enum<?>... ignore){
-		Arrays.sort(ignore);
-		StringBuilder sb = new StringBuilder("INSERT INTO " + enums.getSimpleName() + "(");
-		for (Object l : enums.getEnumConstants()){
-			if(Arrays.binarySearch(ignore, l) < 0){
-				DatabaseKeys e =  (DatabaseKeys) l;
-				sb.append(e.getDatabaseKey() + ",");
-			}
-		}
-		sb.deleteCharAt(sb.lastIndexOf(","));
-		sb.append(") VALUES(");
-		for (Object l : enums.getEnumConstants())
-			if(Arrays.binarySearch(ignore, l) < 0)
-				sb.append("?,");
-		sb.deleteCharAt(sb.lastIndexOf(","));
-		sb.append(")");
-		String returnValue = sb.toString();
-		System.out.println(returnValue);
-		return returnValue;
-	}
-
-	static Database getInstance() {
-		if (instance == null) {
-			try {
-				instance = new Database();
-			} catch (ClassNotFoundException | SQLException e) {
-				e.printStackTrace();
-			}
-		}
-		return instance;
-	}
-
 	void addBerry(String name, int number, int sold, int nonSold, int price) {
 		try {
 			insertBerries.setString(Berries.NAME.ordinal(), name);
@@ -190,6 +140,58 @@ class Database {
 			e.printStackTrace();
 		}
 	}
+
+	void deleteBerryItem(int id) {
+		try {
+			deleteBerries.setInt(Berries.ID.ordinal() + 1, id); // enum index from 0, setInt index from 1
+			deleteBerries.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	void deletePriceItem(int id) {
+		try {
+			deletePrices.setInt(Prices.ID.ordinal() + 1, id); // enum index from 0, setInt index from 1
+			deletePrices.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private String generateInsert(Class<? extends Enum<?>> enums, Enum<?>... ignore){
+		Arrays.sort(ignore);
+		StringBuilder sb = new StringBuilder("INSERT INTO " + enums.getSimpleName() + "(");
+		for (Object l : enums.getEnumConstants()){
+			if(Arrays.binarySearch(ignore, l) < 0){
+				DatabaseKeys e =  (DatabaseKeys) l;
+				sb.append(e.getDatabaseKey() + ",");
+			}
+		}
+		sb.deleteCharAt(sb.lastIndexOf(","));
+		sb.append(") VALUES(");
+		for (Object l : enums.getEnumConstants())
+			if(Arrays.binarySearch(ignore, l) < 0)
+				sb.append("?,");
+		sb.deleteCharAt(sb.lastIndexOf(","));
+		sb.append(")");
+		String returnValue = sb.toString();
+		System.out.println(returnValue);
+		return returnValue;
+	}
+	
+	private String generateTable(Class<? extends Enum<? extends DatabaseKeys>> enums){
+		StringBuilder sb = new StringBuilder("CREATE TABLE " + enums.getSimpleName() + "(");
+		for (Object l : enums.getEnumConstants()){
+			DatabaseKeys e =  (DatabaseKeys) l;
+			sb.append(e.getDatabaseType() + ",");
+		}
+		sb.deleteCharAt(sb.lastIndexOf(","));
+		sb.append(")");
+		String returnValue = sb.toString();
+		System.out.println(returnValue);
+		return returnValue;
+	}
 	
 	ArrayList<LinkedHashMap<String, String>> getAllBerries() {
 		try {
@@ -207,7 +209,7 @@ class Database {
 		}
 		return null;
 	}
-	
+
 	ArrayList<LinkedHashMap<String, String>> getAllPrices() {
 		try {
 			ResultSet set = getAllPrices.executeQuery();
@@ -223,6 +225,22 @@ class Database {
 			e.printStackTrace();
 		}
 		return null;
+	}
+	
+	private void printTable(Class<? extends Enum<?>> table){
+		ArrayList<LinkedHashMap<String, String>> list = null;
+		if(table == Berries.class){
+			list = getAllBerries();
+			System.out.println("BERRIES");
+		} else if(table == Prices.class){
+			list = getAllPrices();
+			System.out.println("PRICES");
+		}
+		for(HashMap<String, String> a : list){
+			for(Entry<String, String> e : a.entrySet())
+				System.out.print(e + " ");
+			System.out.println();
+		}		
 	}
 
 	void updateBerry(int id, String name, Integer number, Integer sold, Integer nonSold, Integer price) {
@@ -296,24 +314,6 @@ class Database {
 			}
 			st.setInt(data.size()+1, id);
 			st.executeUpdate();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-
-	void deleteBerryItem(int id) {
-		try {
-			deleteBerries.setInt(Berries.ID.ordinal() + 1, id); // enum index from 0, setInt index from 1
-			deleteBerries.executeUpdate();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	void deletePriceItem(int id) {
-		try {
-			deletePrices.setInt(Prices.ID.ordinal() + 1, id); // enum index from 0, setInt index from 1
-			deletePrices.executeUpdate();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
