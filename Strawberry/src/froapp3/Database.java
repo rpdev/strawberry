@@ -8,26 +8,25 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map.Entry;
+import java.util.EnumMap;
 
 class Database {
-	private enum Berries implements DatabaseKeys{
-		ID("INTEGER PRIMARY KEY", Integer.class),
-		NAME("TEXT", String.class),
-		NUMBER("INTEGER", Integer.class),
-		SOLD("INTEGER", Integer.class),
-		NON_SOLD("INTEGER", Integer.class),
-		PRICE("INTEGER", Integer.class);
+	enum Berries implements DatabaseKeys{
+		ID("INTEGER PRIMARY KEY", Integer.class, "ID"),
+		NAME("TEXT", String.class, "Namn"),
+		NUMBER("INTEGER", Integer.class, "Antal"),
+		SOLD("INTEGER", Integer.class, "Sålda"),
+		NON_SOLD("INTEGER", Integer.class, "Ej Sålda"),
+		PRICE("INTEGER", Integer.class, "Pris");
 		
 		private final String databaseType;
 		private final Class<?> javaClass;
-		private static HashMap<String, Class<?>> map;
+		private final String name;
 		
-		private Berries(String databaseType, Class<?> javaClass){
+		private Berries(String databaseType, Class<?> javaClass, String name){
 			this.databaseType = databaseType;
 			this.javaClass = javaClass;
+			this.name = name;
 		}
 
 		@Override
@@ -39,17 +38,18 @@ class Database {
 		public String getDatabaseType() {
 			return getDatabaseKey() + " " + databaseType;
 		}
-		
-		private synchronized static HashMap<String, Class<?>> getJavaClassMapping(){
-			if(map == null){
-				map = new HashMap<String, Class<?>>();
-				for(Berries e : values())
-					map.put(e.getDatabaseKey(), e.javaClass);
-			}
-			return map;
+
+		@Override
+		public Class<?> getJavaClass() {
+			return javaClass;
+		}
+
+		@Override
+		public String getName() {
+			return name;
 		}
 	}
-	private interface DatabaseKeys{
+	interface DatabaseKeys{
 		/**
 		 * Returns the name of this enum value in the database,
 		 * for which values are stored.
@@ -63,19 +63,23 @@ class Database {
 		 * @return Database type.
 		 */
 		String getDatabaseType();
+		
+		Class<?> getJavaClass();
+		String getName();
 	}
-	private enum Prices implements DatabaseKeys{
-		ID("INTEGER PRIMARY KEY", Integer.class),
-		PRICE("INTEGER", Integer.class),
-		BERRY_ID("INTEGER, FOREIGN KEY(berry_id) REFERENCES Berries(id) ON DELETE CASCADE", Integer.class);
+	enum Prices implements DatabaseKeys{
+		ID("INTEGER PRIMARY KEY", Integer.class, "ID"),
+		PRICE("INTEGER", Integer.class, "Pris"),
+		BERRY_ID("INTEGER, FOREIGN KEY(berry_id) REFERENCES Berries(id) ON DELETE CASCADE", Integer.class, "Hidden");
 		
 		private final String databaseType;
 		private final Class<?> javaClass;
-		private static HashMap<String, Class<?>> map;
+		private final String name;
 		
-		private Prices(String databaseType, Class<?> javaClass){
+		private Prices(String databaseType, Class<?> javaClass, String name){
 			this.databaseType = databaseType;
 			this.javaClass = javaClass;
+			this.name = name;
 		}
 
 		@Override
@@ -87,14 +91,15 @@ class Database {
 		public String getDatabaseType() {
 			return getDatabaseKey() + " " + databaseType;
 		}
-		
-		private synchronized static HashMap<String, Class<?>> getJavaClassMapping(){
-			if(map == null){
-				map = new HashMap<String, Class<?>>();
-				for(Prices e : values())
-					map.put(e.getDatabaseKey(), e.javaClass);
-			}
-			return map;
+
+		@Override
+		public Class<?> getJavaClass() {
+			return javaClass;
+		}
+
+		@Override
+		public String getName() {
+			return name;
 		}
 	}
 	
@@ -130,7 +135,7 @@ class Database {
 		insertPrices = connection.prepareStatement(generateInsert(Prices.class, Prices.ID));
 
 		getAllBerries = connection.prepareStatement("SELECT * FROM "+Berries.class.getSimpleName());
-		getAllPrices = connection.prepareStatement("SELECT * FROM "+Prices.class.getSimpleName());
+		getAllPrices = connection.prepareStatement("SELECT * FROM "+Prices.class.getSimpleName()+" WHERE "+Prices.BERRY_ID.getDatabaseKey()+" = ?");
 		
 		deleteBerries = connection.prepareStatement("DELETE FROM "+Berries.class.getSimpleName()+" WHERE "+Berries.ID.getDatabaseKey()+" = ?");
 		deletePrices = connection.prepareStatement("DELETE FROM "+Prices.class.getSimpleName()+" WHERE "+Prices.ID.getDatabaseKey()+" = ?");
@@ -218,14 +223,14 @@ class Database {
 		return returnValue;
 	}
 	
-	ArrayList<LinkedHashMap<String, Object>> getAllBerries() {
+	ArrayList<EnumMap<Berries, Object>> getAllBerries() {
 		try {
 			ResultSet set = getAllBerries.executeQuery();
-			ArrayList<LinkedHashMap<String, Object>> data = new ArrayList<>();
+			ArrayList<EnumMap<Berries, Object>> data = new ArrayList<>();
 			while (set.next()) {
-				LinkedHashMap<String, Object> rowData = new LinkedHashMap<>();
+				EnumMap<Berries, Object> rowData = new EnumMap<>(Berries.class);
 				for (Berries l : Berries.values()){
-					rowData.put(l.toString(), set.getObject(l.ordinal() + 1));
+					rowData.put(l, set.getObject(l.ordinal() + 1));
 				}
 				data.add(rowData);
 			}
@@ -237,14 +242,15 @@ class Database {
 		return null;
 	}
 	
-	ArrayList<LinkedHashMap<String, Object>> getAllPrices() {
+	ArrayList<EnumMap<Prices, Object>> getAllPrices(int id) {
 		try {
+			getAllPrices.setInt(1, id);
 			ResultSet set = getAllPrices.executeQuery();
-			ArrayList<LinkedHashMap<String, Object>> data = new ArrayList<>();
+			ArrayList<EnumMap<Prices, Object>> data = new ArrayList<>();
 			while (set.next()) {
-				LinkedHashMap<String, Object> rowData = new LinkedHashMap<>();
+				EnumMap<Prices, Object> rowData = new EnumMap<>(Prices.class);
 				for (Prices l : Prices.values())
-					rowData.put(l.toString(), set.getObject(l.ordinal() + 1));
+					rowData.put(l, set.getObject(l.ordinal() + 1));
 				data.add(rowData);
 			}
 			set.close();
@@ -289,22 +295,6 @@ class Database {
 			e.printStackTrace();
 		}
 		return null;
-	}
-	
-	private void printTable(Class<? extends Enum<?>> table){
-		ArrayList<LinkedHashMap<String, Object>> list = null;
-		if(table == Berries.class){
-			list = getAllBerries();
-			System.out.println("BERRIES");
-		} else if(table == Prices.class){
-			list = getAllPrices();
-			System.out.println("PRICES");
-		}
-		for(HashMap<String, Object> a : list){
-			for(Entry<String, Object> e : a.entrySet())
-				System.out.print(e + " ");
-			System.out.println();
-		}		
 	}
 
 	boolean updateBerry(int id, String name, Integer number, Integer sold, Integer nonSold, Integer price) {

@@ -1,9 +1,13 @@
 package froapp3;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
+import java.util.EnumMap;
 import java.util.Map.Entry;
+
+import froapp3.Database.Berries;
+import froapp3.Database.DatabaseKeys;
+import froapp3.Database.Prices;
 
 class FroApp {
 	
@@ -27,29 +31,54 @@ class FroApp {
 		d.addPrice(100, 2);
 		d.addPrice(10, 2);
 		
-		for(Object[] row : generateBerriesTableData()){
-			for(Object cell : row)
-				System.out.print(cell + " ");
-			System.out.println();
+		new Gui(new TableBackend(this, Berries.class, createNameTypeList(Berries.class), generateBerriesTableData()));
+	}
+	
+	TableBackend getPricesTable(int id){
+		return new TableBackend(this, Prices.class, createNameTypeList(Prices.class), generatePricesTableData(id));
+	}
+	
+	private ArrayList<Entry<String, Class<?>>> createNameTypeList(Class<? extends Enum<? extends DatabaseKeys>> t){
+		ArrayList<Entry<String, Class<?>>> types = new ArrayList<>();
+		for(Enum<? extends DatabaseKeys> e : t.getEnumConstants()){
+			DatabaseKeys l = (DatabaseKeys) e;
+			Entry<String, Class<?>> entry = new AbstractMap.SimpleEntry<String, Class<?>>(l.getName(), l.getJavaClass());
+			types.add(entry);
 		}
-			
+		if(t == Berries.class){
+			types.add(new AbstractMap.SimpleEntry<String, Class<?>>("Lägsta", Integer.class));
+			types.add(new AbstractMap.SimpleEntry<String, Class<?>>("Högsta", Integer.class));
+			types.add(new AbstractMap.SimpleEntry<String, Class<?>>("Medel", Integer.class));
+		}
+		return types;
 	}
 	
 	private ArrayList<Object[]> generateBerriesTableData(){
-		ArrayList<LinkedHashMap<String, Object>> all = Database.getInstance().getAllBerries();
-		for(String key : all.get(0).keySet()) // error if list empty
-			System.out.print(key + " ");
-		System.out.println();
+		ArrayList<EnumMap<Berries, Object>> allRows = Database.getInstance().getAllBerries();
 		ArrayList<Object[]> data = new ArrayList<Object[]>(); // data to be used in TableModel
-		for(LinkedHashMap<String, Object> map : all){ // loop through every value in array
-			Object[] row = new Object[9]; // enummap would be better, trying to keep this part sort of easy
-			Iterator<Entry<String, Object>> entrySet = map.entrySet().iterator(); // need iterator for looping
+		for(EnumMap<Berries, Object> map : allRows){ // loop through every value in array
+			Object[] row = new Object[9];
+			Berries[] berries = Berries.values();
 			int i;
-			for(i=0; entrySet.hasNext() ;i++) // possible IndexOutOfBoundExecption
-				row[i] = entrySet.next().getValue();
+			for(i=0; i<berries.length ;i++)
+				row[i] = map.get(berries[i]);
 			row[i++] = Database.getInstance().getMinPrice((int) row[0]); // min value
 			row[i++] = Database.getInstance().getMaxPrice((int) row[0]); // max value
 			row[i] = null; // avg
+			data.add(row);
+		}
+		return data;
+	}
+	
+	private ArrayList<Object[]> generatePricesTableData(int id){
+		ArrayList<EnumMap<Prices, Object>> allRows = Database.getInstance().getAllPrices(id);
+		ArrayList<Object[]> data = new ArrayList<Object[]>(); // data to be used in TableModel
+		Prices[] prices = Prices.values();
+		for(EnumMap<Prices, Object> map : allRows){ // loop through every value in array
+			Object[] row = new Object[3];
+			int i;
+			for(i=0; i< prices.length ;i++)
+				row[i] = map.get(prices[i]);
 			data.add(row);
 		}
 		return data;
