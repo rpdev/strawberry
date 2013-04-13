@@ -1,2 +1,8 @@
+The purpose of the project was to create a simple program for storing sales data.
+
 This project was created to help a friend with a programming task, package froapp is his try to get the application working,
 while the order packages are created by me.
+
+package 'froapp2' was the first draft of the project, while package 'froapp3' is the complete project.
+The code could be improved with more effective code together with better checks for valid data and of
+course mode comments ;) .
