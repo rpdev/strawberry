@@ -1,10 +1,12 @@
 package froapp3;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.Map.Entry;
 
 import javax.swing.table.DefaultTableModel;
 
+import froapp3.Database.Berries;
 import froapp3.Database.DatabaseKeys;
 import froapp3.Database.Prices;
 
@@ -65,5 +67,21 @@ class TableBackend extends DefaultTableModel {
 		
 	}
 
+	void addBerry(EnumMap<Berries, Object> values) {
+		froapp.addBerry(values);
+	}
 
+	void setValues(ArrayList<Object[]> data) {
+		/*
+		 * Could cause problem, improvement would be to synchronize data
+		 * to avoid access while chancing data.
+		 */
+		this.data.clear();
+		this.data.addAll(data);
+		fireTableDataChanged();
+	}
+
+	void deleteBerry(int row) {
+		froapp.deleteBerry((int) data.get(row)[0]);
+	}
 }

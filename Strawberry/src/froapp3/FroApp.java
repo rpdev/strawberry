@@ -10,28 +10,32 @@ import froapp3.Database.DatabaseKeys;
 import froapp3.Database.Prices;
 
 class FroApp {
+	private final TableBackend berries;
 	
 	private FroApp(){
 		Database d = Database.getInstance();
-		d.addBerry("test", 0, 0, 0, 0);
-		d.addBerry("test2", 0, 0, 0, 0);
-		
-		d.updateBerry(1, null, null, 2, 1, 3);
-		d.updateBerry(2, null, null, 2, 1, 5);
-		
-		d.addPrice(100, 1);
-		d.addPrice(100, 1);
-		d.addPrice(100, 1);
-		d.addPrice(555, 1);
-		d.addPrice(11, 1);
-		d.updatePrice(1, 333, null);
-		
-		d.addPrice(101, 2);
-		d.addPrice(102, 2);
-		d.addPrice(100, 2);
-		d.addPrice(10, 2);
-		
-		new Gui(new TableBackend(this, Berries.class, createNameTypeList(Berries.class), generateBerriesTableData()));
+		int n = (int)(Math.random()*10);
+		for(int i=0;i < n;i++){
+			System.out.println("Adding berry "+i+"/"+n);
+			EnumMap<Berries, Object> v = new EnumMap<Database.Berries, Object>(Berries.class);
+			v.put(Berries.NAME, "Test"+i);
+			v.put(Berries.NUMBER, (int) (Math.random()*1000));
+			v.put(Berries.SOLD, (int) (Math.random()*1000));
+			v.put(Berries.NON_SOLD, (int) (Math.random()*1000));
+			v.put(Berries.PRICE, (int) (Math.random()*1000));
+			d.addBerry(v);
+		}
+		for(int i=1;i<=n;i++){
+			int nn = (int)(Math.random()*10);
+			for(int j=0;j<nn;j++){
+				System.out.println("Adding price["+i+"] "+j+"/"+nn);
+				d.addPrice((int)(Math.random()*1000), i);
+			}
+		}
+//		d.updateBerry(1, null, null, 2, 1, 3);
+//		d.updateBerry(2, null, null, 2, 1, 5);
+//		d.updatePrice(1, 333, null);		
+		new Gui(berries = new TableBackend(this, Berries.class, createNameTypeList(Berries.class), generateBerriesTableData()));
 	}
 	
 	TableBackend getPricesTable(int id){
@@ -86,6 +90,19 @@ class FroApp {
 
 	public static void main(String[] args) {
 		new FroApp();
+	}
+
+	void addBerry(EnumMap<Berries, Object> values) {
+		if(values.size() == Berries.values().length - 1){
+			if(Database.getInstance().addBerry(values))
+				berries.setValues(generateBerriesTableData()); // possible improvement, only add new row not all
+		}else
+			System.err.println("Missing values for adding berry");
+	}
+
+	void deleteBerry(int id) {
+		if(Database.getInstance().deleteBerryItem(id))
+			berries.setValues(generateBerriesTableData()); // possible improvement, only remove one row, skip updating all
 	}
 
 }

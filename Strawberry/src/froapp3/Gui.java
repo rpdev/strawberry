@@ -1,12 +1,15 @@
 package froapp3;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.AbstractMap;
 import java.util.EnumMap;
+import java.util.Map.Entry;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -63,6 +66,21 @@ class Gui extends JFrame {
 			}
 		});
 		JButton remove = new JButton("Radera");
+		remove.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				EventQueue.invokeLater(new Runnable() {
+					
+					@Override
+					public void run() {
+						int row = table.getSelectedRow();
+						if(row > -1)
+							tableModel.deleteBerry(row);
+					}
+				});
+			}
+		});
 		
 		JPanel buttons = new JPanel(new FlowLayout());
 		buttons.add(add);
@@ -81,21 +99,58 @@ class Gui extends JFrame {
 	
 	private class AddBerry extends JFrame{
 		private static final long serialVersionUID = 5580159001584032476L;
-		private final EnumMap<Berries, JTextField> fields = new EnumMap<>(Berries.class);
+		private final EnumMap<Berries, Entry<JLabel,JTextField>> fields = new EnumMap<>(Berries.class);
 		
-		private AddBerry(TableBackend tableModel){
+		private AddBerry(final TableBackend tableModel){
 			this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			this.setLayout(new GridLayout(0,2));
 			this.setTitle("Nytt bär");
 			this.setLocationRelativeTo(null);
 			Berries[] values = Berries.values();
 			for(int i=1;i<values.length;i++){ // skip ID, auto generated
-				this.add(new JLabel(values[i].getName()));
-				JTextField field = new JTextField();
-				fields.put(values[i], field);
-				this.add(field);
+				Entry<JLabel, JTextField> entry = new AbstractMap.SimpleEntry<>(new JLabel(values[i].getName()),new JTextField());
+				fields.put(values[i], entry);
+				this.add(entry.getKey());
+				this.add(entry.getValue());				
 			}
 			JButton save = new JButton("Spara");
+			save.addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					EventQueue.invokeLater(new Runnable() {
+						
+						@Override
+						public void run() {
+							EnumMap<Berries, Object> values = new EnumMap<>(Berries.class);
+							boolean commit = true;
+							for(Entry<Berries, Entry<JLabel, JTextField>> entry : fields.entrySet()){								
+								String value = entry.getValue().getValue().getText().trim();
+								if(value.length() > 0){
+									try{
+										if(entry.getKey().getJavaClass().equals(String.class))
+											values.put(entry.getKey(), value);
+										else if(entry.getKey().getJavaClass().equals(Integer.class))
+											values.put(entry.getKey(), Integer.parseInt(value));
+										entry.getValue().getKey().setForeground(Color.BLACK);
+									} catch(NumberFormatException e){
+										commit = false;
+										entry.getValue().getKey().setForeground(Color.RED);
+										System.err.println(e.getMessage());
+									}
+								} else{
+									commit = false;
+									entry.getValue().getKey().setForeground(Color.RED);
+								}
+							}
+							if(commit){
+								tableModel.addBerry(values);
+								dispose();
+							}
+						}
+					});
+				}
+			});
 			JButton abort = new JButton("Avbryt");
 			abort.addActionListener(new ActionListener() {
 				

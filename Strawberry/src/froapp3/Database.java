@@ -144,13 +144,13 @@ class Database {
 		maxPrice = connection.prepareStatement("SELECT MAX("+Prices.PRICE.getDatabaseKey()+") FROM "+Prices.class.getSimpleName()+" WHERE "+Prices.BERRY_ID.getDatabaseKey()+" = ?");
 	}
 	
-	boolean addBerry(String name, int number, int sold, int nonSold, int price) {
+	boolean addBerry(EnumMap<Berries, Object> values) {
 		try {
-			insertBerries.setString(Berries.NAME.ordinal(), name);
-			insertBerries.setInt(Berries.NUMBER.ordinal(), number);
-			insertBerries.setInt(Berries.SOLD.ordinal(), sold);
-			insertBerries.setInt(Berries.NON_SOLD.ordinal(), nonSold);
-			insertBerries.setInt(Berries.PRICE.ordinal(), price);
+			insertBerries.setString(Berries.NAME.ordinal(), (String) values.get(Berries.NAME));
+			insertBerries.setInt(Berries.NUMBER.ordinal(), (int) values.get(Berries.NUMBER));
+			insertBerries.setInt(Berries.SOLD.ordinal(), (int) values.get(Berries.SOLD));
+			insertBerries.setInt(Berries.NON_SOLD.ordinal(), (int) values.get(Berries.NON_SOLD));
+			insertBerries.setInt(Berries.PRICE.ordinal(), (int) values.get(Berries.PRICE));
 			return insertBerries.executeUpdate() == 1;
 		} catch (SQLException e) {
 			e.printStackTrace();
