@@ -105,4 +105,14 @@ class FroApp {
 			berries.setValues(generateBerriesTableData()); // possible improvement, only remove one row, skip updating all
 	}
 
+	void addPrice(int price, int berryId, TableBackend tableModel) {
+		if(Database.getInstance().addPrice(price, berryId))
+			tableModel.setValues(generatePricesTableData(berryId));
+	}
+
+	void deletePrice(int berryId, int priceId, TableBackend tableModel) {
+		if(Database.getInstance().deletePriceItem(priceId))
+			tableModel.setValues(generatePricesTableData(berryId));
+	}
+
 }

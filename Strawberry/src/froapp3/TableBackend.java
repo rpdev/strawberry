@@ -84,4 +84,14 @@ class TableBackend extends DefaultTableModel {
 	void deleteBerry(int row) {
 		froapp.deleteBerry((int) data.get(row)[0]);
 	}
+
+	void addPrice(int price, int berryId, TableBackend tableModel) {
+		froapp.addPrice(price, berryId, tableModel);
+	}
+
+	void deletePrice(int row, TableBackend tableModel) {
+		Object[] d = data.get(row);
+		// id, price, berryID
+		froapp.deletePrice((int) d[2], (int) d[0], tableModel);
+	}
 }

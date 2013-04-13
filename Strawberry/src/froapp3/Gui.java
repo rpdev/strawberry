@@ -7,11 +7,13 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.NumberFormat;
 import java.util.AbstractMap;
 import java.util.EnumMap;
 import java.util.Map.Entry;
 
 import javax.swing.JButton;
+import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -59,7 +61,7 @@ class Gui extends JFrame {
 						if(row > -1){
 							int id = (int) tableModel.getValueAt(row, Berries.ID.ordinal());
 							String title = (String) tableModel.getValueAt(row, Berries.NAME.ordinal());
-							new PriceGui(tableModel.getPriceTable(id), title);
+							new PriceGui(tableModel.getPriceTable(id), title, id);
 						}
 					}
 				});
@@ -171,25 +173,105 @@ class Gui extends JFrame {
 			this.setVisible(true);
 		}
 	}
+	
+	private class AddPrice extends JFrame{
+		private static final long serialVersionUID = 6261547800204902526L;
+
+		private AddPrice(final TableBackend tableModel, String title, final int berryId){
+			this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			this.setLayout(new GridLayout(0,2));
+			this.setTitle(title + " Nytt Pris");
+			this.setLocationRelativeTo(Gui.this);
+			this.setResizable(false);
+			
+			JLabel label = new JLabel("Pris");
+			this.add(label);
+			final JFormattedTextField field = new JFormattedTextField(NumberFormat.getInstance());
+			this.add(field);
+			
+			JButton save = new JButton("Spara");
+			save.addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					EventQueue.invokeLater(new Runnable() {
+						
+						@Override
+						public void run() {
+							Object v = field.getValue();
+							if(v != null){
+								tableModel.addPrice(((Long) v).intValue(), berryId, tableModel);
+								dispose();
+							}
+						}
+					});
+				}
+			});
+			this.add(save);
+			
+			JButton abort = new JButton("Avbryt");
+			abort.addActionListener(new ActionListener() {				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					EventQueue.invokeLater(new Runnable() {						
+						@Override
+						public void run() {
+							dispose();
+						}
+					});
+				}
+			});
+			this.add(abort);
+			
+			this.pack();
+			this.setVisible(true);
+		}
+	}
 
 	private class PriceGui extends JFrame{
 		private static final long serialVersionUID = -1224970052450584412L;
 
-		private PriceGui(TableBackend tableModel, String title){
+		private PriceGui(final TableBackend tableModel, final String title, final int berryId){
 			this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			this.setTitle(title);
 			this.setLayout(new BorderLayout());
 			this.setLocationRelativeTo(Gui.this);
 			
+			final JTable table = new JTable(tableModel);
+			
 			JButton add = new JButton("Lägg till");
+			add.addActionListener(new ActionListener() {				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					EventQueue.invokeLater(new Runnable() {						
+						@Override
+						public void run() {
+							new AddPrice(tableModel, title, berryId);
+						}
+					});
+				}
+			});
 			JButton remove = new JButton("Radera");
+			remove.addActionListener(new ActionListener() {				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					EventQueue.invokeLater(new Runnable() {						
+						@Override
+						public void run() {
+							int row = table.getSelectedRow();
+							if(row > -1){
+								tableModel.deletePrice(row, tableModel);
+							}
+						}
+					});
+				}
+			});
 			
 			JPanel buttons = new JPanel(new FlowLayout());
 			buttons.add(add);
 			buttons.add(remove);
 			this.add(buttons, BorderLayout.NORTH);
 			
-			JTable table = new JTable(tableModel);
 			TableRowSorter<TableBackend> sorter = new TableRowSorter<>(tableModel);
 			table.setRowSorter(sorter);
 			table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
