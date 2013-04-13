@@ -106,13 +106,52 @@ class FroApp {
 	}
 
 	void addPrice(int price, int berryId, TableBackend tableModel) {
-		if(Database.getInstance().addPrice(price, berryId))
+		if(Database.getInstance().addPrice(price, berryId)){
+			berries.setValues(generateBerriesTableData());
 			tableModel.setValues(generatePricesTableData(berryId));
+		}
 	}
 
 	void deletePrice(int berryId, int priceId, TableBackend tableModel) {
-		if(Database.getInstance().deletePriceItem(priceId))
+		if(Database.getInstance().deletePriceItem(priceId)){
+			berries.setValues(generateBerriesTableData());
 			tableModel.setValues(generatePricesTableData(berryId));
+		}
+	}
+
+	void updateBerry(int id, Berries berry, Object aValue) {
+		// possible better with enummap, not a nice solution...
+		switch(berry){
+		case NAME: 
+			if(Database.getInstance().updateBerry(id, (String) aValue, null, null, null, null))
+				berries.setValues(generateBerriesTableData());
+			break;
+		case NUMBER: 
+			if(Database.getInstance().updateBerry(id, null, (Integer) aValue, null, null, null))
+				berries.setValues(generateBerriesTableData());
+			break;
+		case SOLD: 
+			if(Database.getInstance().updateBerry(id, null, null, (Integer) aValue, null, null))
+				berries.setValues(generateBerriesTableData());
+			break;
+		case NON_SOLD: 
+			if(Database.getInstance().updateBerry(id, null, null, null, (Integer) aValue, null))
+				berries.setValues(generateBerriesTableData());
+			break;
+		case PRICE: 
+			if(Database.getInstance().updateBerry(id, null, null, null, null, (Integer) aValue))
+				berries.setValues(generateBerriesTableData());
+			break;
+		default: System.err.println("Can't change " + berry);
+			break;
+		}
+	}
+
+	void updatePrice(int id, int price, int berryId, TableBackend tableModel) {
+		if(Database.getInstance().updatePrice(id, price)){
+			berries.setValues(generateBerriesTableData());
+			tableModel.setValues(generatePricesTableData(berryId));
+		}
 	}
 
 }

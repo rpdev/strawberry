@@ -24,10 +24,24 @@ class TableBackend extends DefaultTableModel {
 		this.classTypes = classTypes;
 	}
 	
-	TableBackend getPriceTable(int id){
-		return froapp.getPricesTable(id);
+	void addBerry(EnumMap<Berries, Object> values) {
+		froapp.addBerry(values);
 	}
 	
+	void addPrice(int price, int berryId, TableBackend tableModel) {
+		froapp.addPrice(price, berryId, tableModel);
+	}
+
+	void deleteBerry(int row) {
+		froapp.deleteBerry((int) data.get(row)[0]);
+	}
+
+	void deletePrice(int row, TableBackend tableModel) {
+		Object[] d = data.get(row);
+		// id, price, berryID
+		froapp.deletePrice((int) d[2], (int) d[0], tableModel);
+	}
+
 	@Override
 	public Class<?> getColumnClass(int columnIndex) {
 		return classTypes.get(columnIndex).getValue();
@@ -41,6 +55,10 @@ class TableBackend extends DefaultTableModel {
 	@Override
 	public String getColumnName(int columnIndex) {
 		return classTypes.get(columnIndex).getKey();
+	}
+
+	TableBackend getPriceTable(int id){
+		return froapp.getPricesTable(id);
 	}
 
 	@Override
@@ -58,17 +76,21 @@ class TableBackend extends DefaultTableModel {
 
 	@Override
 	public boolean isCellEditable(int rowIndex, int columnIndex) {
-		return columnIndex > 0;
+		if(columnIndex == 0)
+			return false;
+		else if(type == Berries.class && columnIndex > Berries.PRICE.ordinal())
+			return false;
+		else
+			return true;
 	}
 
 	@Override
 	public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	void addBerry(EnumMap<Berries, Object> values) {
-		froapp.addBerry(values);
+		if(type == Berries.class){
+			froapp.updateBerry((int) data.get(rowIndex)[0], Berries.values()[columnIndex], aValue);
+		} else { // Prices
+			froapp.updatePrice((int) data.get(rowIndex)[0], (int) aValue, (int) data.get(rowIndex)[2], this);
+		}
 	}
 
 	void setValues(ArrayList<Object[]> data) {
@@ -79,19 +101,5 @@ class TableBackend extends DefaultTableModel {
 		this.data.clear();
 		this.data.addAll(data);
 		fireTableDataChanged();
-	}
-
-	void deleteBerry(int row) {
-		froapp.deleteBerry((int) data.get(row)[0]);
-	}
-
-	void addPrice(int price, int berryId, TableBackend tableModel) {
-		froapp.addPrice(price, berryId, tableModel);
-	}
-
-	void deletePrice(int row, TableBackend tableModel) {
-		Object[] d = data.get(row);
-		// id, price, berryID
-		froapp.deletePrice((int) d[2], (int) d[0], tableModel);
 	}
 }

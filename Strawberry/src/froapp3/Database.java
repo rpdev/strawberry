@@ -118,7 +118,7 @@ class Database {
 	
 	private final Connection connection;
 	
-	private final PreparedStatement insertBerries, insertPrices, getAllBerries, getAllPrices, deleteBerries, deletePrices, minPrice, maxPrice;
+	private final PreparedStatement insertBerries, insertPrices, getAllBerries, getAllPrices, deleteBerries, deletePrices, minPrice, maxPrice, updatePrice;
 
 	private Database() throws ClassNotFoundException, SQLException {
 		Class.forName("org.sqlite.JDBC");
@@ -142,6 +142,8 @@ class Database {
 		
 		minPrice = connection.prepareStatement("SELECT MIN("+Prices.PRICE.getDatabaseKey()+") FROM "+Prices.class.getSimpleName()+" WHERE "+Prices.BERRY_ID.getDatabaseKey()+" = ?");
 		maxPrice = connection.prepareStatement("SELECT MAX("+Prices.PRICE.getDatabaseKey()+") FROM "+Prices.class.getSimpleName()+" WHERE "+Prices.BERRY_ID.getDatabaseKey()+" = ?");
+		
+		updatePrice = connection.prepareStatement("UPDATE "+Prices.class.getSimpleName()+" SET "+Prices.PRICE.getDatabaseKey()+" = ? WHERE id = ?");
 	}
 	
 	boolean addBerry(EnumMap<Berries, Object> values) {
@@ -342,33 +344,11 @@ class Database {
 		return false;
 	}
 	
-	boolean updatePrice(int id, Integer price, Integer berryId) {
+	boolean updatePrice(int id, int price) {
 		try {
-			StringBuilder sb = new StringBuilder("UPDATE "+Prices.class.getSimpleName()+" SET ");
-			ArrayList<Object> data = new ArrayList<>();
-			if (price != null) {
-				sb.append(Prices.PRICE.getDatabaseKey()+ " = ?,");
-				data.add(price);
-			}
-			if (berryId != null) {
-				sb.append(Prices.BERRY_ID.getDatabaseKey()+ " = ?,");
-				data.add(berryId);
-			}
-			sb.deleteCharAt(sb.lastIndexOf(","));
-			sb.append(" WHERE "+Prices.ID.getDatabaseKey()+" = ?");
-			System.out.println(sb.toString());
-			PreparedStatement st = connection.prepareStatement(sb.toString());
-			for(int i=0;i<data.size();i++){
-				Object d = data.get(i);
-				if(d instanceof String)
-					st.setString(i+1, (String) d);
-				else if(d instanceof Integer)
-					st.setInt(i+1, (int) d);
-				else
-					System.err.println("Unkown type "+d.getClass());
-			}
-			st.setInt(data.size()+1, id);
-			return st.executeUpdate() == 1;
+			updatePrice.setInt(1, price);
+			updatePrice.setInt(2, id);
+			return updatePrice.executeUpdate() == 1;
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
