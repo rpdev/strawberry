@@ -46,7 +46,7 @@ class FroApp {
 				row[i] = map.get(berries[i]);
 			row[i++] = Database.getInstance().getMinPrice((int) row[0]); // min value
 			row[i++] = Database.getInstance().getMaxPrice((int) row[0]); // max value
-			row[i] = null; // avg
+			row[i] = Database.getInstance().getAvgPrice((int) row[0]); // avg value
 			data.add(row);
 		}
 		return data;

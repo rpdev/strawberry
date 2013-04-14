@@ -118,7 +118,7 @@ class Database {
 	
 	private final Connection connection;
 	
-	private final PreparedStatement insertBerries, insertPrices, getAllBerries, getAllPrices, deleteBerries, deletePrices, minPrice, maxPrice, updatePrice;
+	private final PreparedStatement insertBerries, insertPrices, getAllBerries, getAllPrices, deleteBerries, deletePrices, minPrice, maxPrice, avgPrice, updatePrice;
 
 	private Database() throws ClassNotFoundException, SQLException {
 		Class.forName("org.sqlite.JDBC");
@@ -142,6 +142,7 @@ class Database {
 		
 		minPrice = connection.prepareStatement("SELECT MIN("+Prices.PRICE.getDatabaseKey()+") FROM "+Prices.class.getSimpleName()+" WHERE "+Prices.BERRY_ID.getDatabaseKey()+" = ?");
 		maxPrice = connection.prepareStatement("SELECT MAX("+Prices.PRICE.getDatabaseKey()+") FROM "+Prices.class.getSimpleName()+" WHERE "+Prices.BERRY_ID.getDatabaseKey()+" = ?");
+		avgPrice = connection.prepareStatement("SELECT AVG("+Prices.PRICE.getDatabaseKey()+") FROM "+Prices.class.getSimpleName()+" WHERE "+Prices.BERRY_ID.getDatabaseKey()+" = ?");
 		
 		updatePrice = connection.prepareStatement("UPDATE "+Prices.class.getSimpleName()+" SET "+Prices.PRICE.getDatabaseKey()+" = ? WHERE id = ?");
 	}
@@ -289,6 +290,20 @@ class Database {
 		try {
 			minPrice.setInt(1, id);
 			ResultSet result = minPrice.executeQuery();
+			if(result.next()){
+				int v = result.getInt(1);
+				return !result.wasNull() ? v : null;
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	Integer getAvgPrice(int id){
+		try {
+			avgPrice.setInt(1, id);
+			ResultSet result = avgPrice.executeQuery();
 			if(result.next()){
 				int v = result.getInt(1);
 				return !result.wasNull() ? v : null;
