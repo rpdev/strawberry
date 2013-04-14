@@ -125,11 +125,11 @@ class Database {
 		connection = DriverManager.getConnection("jdbc:sqlite:BerriesDatabase.db");
 		connection.createStatement().execute("PRAGMA foreign_keys=ON;");
 		
-		Statement statement = connection.createStatement();
-		statement.executeUpdate("DROP TABLE IF EXISTS "+Berries.class.getSimpleName());
-		statement.executeUpdate("DROP TABLE IF EXISTS "+Prices.class.getSimpleName());		
-		statement.executeUpdate(generateTable(Berries.class));
-		statement.executeUpdate(generateTable(Prices.class));
+		if(!connection.getMetaData().getTables(null, null, Berries.class.getSimpleName(), null).next()){		
+			Statement statement = connection.createStatement();
+			statement.executeUpdate(generateTable(Berries.class));
+			statement.executeUpdate(generateTable(Prices.class));
+		}
 		
 		insertBerries = connection.prepareStatement(generateInsert(Berries.class, Berries.ID));
 		insertPrices = connection.prepareStatement(generateInsert(Prices.class, Prices.ID));

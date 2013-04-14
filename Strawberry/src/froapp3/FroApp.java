@@ -13,28 +13,6 @@ class FroApp {
 	private final TableBackend berries;
 	
 	private FroApp(){
-		Database d = Database.getInstance();
-		int n = (int)(Math.random()*10);
-		for(int i=0;i < n;i++){
-			System.out.println("Adding berry "+i+"/"+n);
-			EnumMap<Berries, Object> v = new EnumMap<Database.Berries, Object>(Berries.class);
-			v.put(Berries.NAME, "Test"+i);
-			v.put(Berries.NUMBER, (int) (Math.random()*1000));
-			v.put(Berries.SOLD, (int) (Math.random()*1000));
-			v.put(Berries.NON_SOLD, (int) (Math.random()*1000));
-			v.put(Berries.PRICE, (int) (Math.random()*1000));
-			d.addBerry(v);
-		}
-		for(int i=1;i<=n;i++){
-			int nn = (int)(Math.random()*10);
-			for(int j=0;j<nn;j++){
-				System.out.println("Adding price["+i+"] "+j+"/"+nn);
-				d.addPrice((int)(Math.random()*1000), i);
-			}
-		}
-//		d.updateBerry(1, null, null, 2, 1, 3);
-//		d.updateBerry(2, null, null, 2, 1, 5);
-//		d.updatePrice(1, 333, null);		
 		new Gui(berries = new TableBackend(this, Berries.class, createNameTypeList(Berries.class), generateBerriesTableData()));
 	}
 	
